@@ -1,4 +1,4 @@
-```markdown
+
 # Agro Radar API
 
 Agro Radar é uma API desenvolvida para aplicações IoT voltadas à agronomia. O objetivo principal é permitir a integração de dispositivos IoT que monitoram e controlam condições agrícolas, como temperatura, umidade, e localização, facilitando o gerenciamento e a tomada de decisões em propriedades rurais.
@@ -97,7 +97,6 @@ http://localhost:8080/swagger-ui/index.html
    http://localhost:8080
    ```
 
----
 
 ## 📌 Funcionalidades Principais
 
