@@ -112,4 +112,3 @@ http://localhost:8080/swagger-ui/index.html
 - **Jefferson Alves Felix**
 - **Erik Silva Maia**
 - **Cheng**
-```
