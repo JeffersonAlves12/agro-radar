@@ -52,7 +52,7 @@ export default function Page() {
   // Função para remover um dispositivo
   const handleDelete = (id: number) => {
     if (!confirm('Tem certeza que deseja remover este dispositivo?')) return;
-    
+
     fetch(`http://localhost:8080/api/dispositivos/${id}`, {
       method: 'DELETE',
     })
@@ -90,6 +90,15 @@ export default function Page() {
   return (
     <div className="max-w-7xl mx-auto p-4">
       <h1 className="text-3xl font-bold text-center mb-6">Lista de Dispositivos</h1>
+      {/* Botão centralizado para adicionar dispositivo */}
+      <div className="flex justify-center mb-6">
+        <Link
+          href="/dispositivos/post"
+          className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"
+        >
+          Adicionar Dispositivo
+        </Link>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {dispositivos.map((dispositivo) => (
           <div key={dispositivo.id} className="bg-white rounded-lg shadow p-6 flex flex-col justify-between">

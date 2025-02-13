@@ -80,7 +80,15 @@ export default function SensorListPage() {
 
   return (
     <div className="max-w-6xl mx-auto p-6 bg-green-50 min-h-screen">
-      <h1 className="text-4xl font-bold text-center text-green-800 mb-8">Lista de Sensores</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-4xl font-bold text-green-800">Lista de Sensores</h1>
+        <Link
+          href="/sensores/post"
+          className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+        >
+          Adicionar Sensor
+        </Link>
+      </div>
       {sensores.length === 0 ? (
         <p className="text-center text-green-700">Nenhum sensor cadastrado.</p>
       ) : (
