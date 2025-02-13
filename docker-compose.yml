@@ -1,11 +1,12 @@
-services:
+version: '3'
 
+services:
   java:
     build:
       context: ./agro-radar-java/
       dockerfile: Dockerfile
     ports:
-      - 8080:8080
+      - "8080:8080"
     depends_on:
       - postgress
       - mongo
@@ -15,25 +16,26 @@ services:
       context: ./agro-radar-next-new/
       dockerfile: Dockerfile
     ports:
-      - 3000:3000
-    volumes:
-      - ./agro-radar-next-new/:/app
-    #espere o java subir para subir o next
+      - "3000:3000"
     depends_on:
       - java
+
   node:
     build:
       context: ./agro-radar-node/
       dockerfile: Dockerfile
     depends_on:
       - mongo
+
   proxy:
-    image: nginx
+    build: ./nginx
     ports:
-      - 80:80
-    volumes:
-      - ./nginx:/etc/nginx
-    
+      - "80:80"
+    depends_on:
+      - nextjs
+      - java
+      - node
+
   postgress:
     image: postgres
     environment:
@@ -41,12 +43,12 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: agro_radar
     ports:
-      - 5432:5432
+      - "5432:5432"
 
   mongo:
     image: mongo
     ports:
-      - 27017:27017
+      - "27017:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: root
