@@ -24,24 +24,31 @@ export default function Home() {
   // Função getLogin usando fetch
   const getLogin = async (email, senha) => {
     const body = JSON.stringify({ email, senha }); // Criar o objeto LoginDto
-    console.log(body, "body");
+    console.log("Dados enviados:", body); // Para depuração
 
-    const response = await fetch("http://localhost:8080/api/auth/login", {
-      method: "POST",
-      headers: {
-        'accept': '*/*',
-        'Content-Type': 'application/json',
-      },
-      body: body,
-    });
-    console.log(response);
-    if (!response.ok) {
-      throw new Error(`Erro ${response.status}: ${response.statusText}`);
+    try {
+      const response = await fetch("http://localhost:8080/api/auth/login", {
+        method: "POST",
+        headers: {
+          'accept': '*/*',
+          'Content-Type': 'application/json',
+        },
+        mode: 'cors', // Adicionado para garantir CORS
+        body: body,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json(); // Captura resposta de erro do backend
+        throw new Error(errorData.message || `Erro ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Resposta do servidor:", data); // Para depuração
+      return data; // Retorna o LoginResponseDto
+    } catch (error) {
+      console.error("Erro na requisição:", error);
+      throw new Error("Não foi possível conectar ao servidor. Verifique sua rede.");
     }
-
-    const data = await response.json();
-    console.log(data);
-    return data; // Retorna o LoginResponseDto
   };
 
   const handleLogin = async (e) => {
@@ -49,12 +56,12 @@ export default function Home() {
     setLoading(true);
     setError("");
 
-    console.log(formData);
+    console.log("Dados do formulário:", formData); // Para depuração
 
     try {
       // Substituir a chamada do repository pela função getLogin
       const response = await getLogin(formData.email, formData.senha);
-      console.warn(response);
+      console.warn("Resposta do login:", response);
 
       // Se chegou aqui, o login foi bem-sucedido
       const { token } = response;
@@ -70,7 +77,7 @@ export default function Home() {
         }
 
         // Redireciona para a página de mapas
-        router.push("/sensor");
+        router.push("/");
       } else {
         throw new Error("Token não recebido do servidor");
       }
