@@ -3,12 +3,16 @@ const mongoose = require('mongoose');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 const eventosRoutes = require('./routes/eventos');
+const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
 
 // Middleware para JSON
 app.use(express.json());
+
+// Libera todas as origens para testes:
+app.use(cors());
 
 // Configuração do Swagger
 const swaggerOptions = {

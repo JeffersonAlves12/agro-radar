@@ -12,12 +12,12 @@ services:
 
   nextjs:
     build:
-      context: ./agro-radar-next/
+      context: ./agro-radar-next-new/
       dockerfile: Dockerfile
     ports:
       - 3000:3000
     volumes:
-      - ./agro-radar-next/:/app
+      - ./agro-radar-next-new/:/app
     #espere o java subir para subir o next
     depends_on:
       - java
