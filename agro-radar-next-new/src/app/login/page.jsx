@@ -38,6 +38,7 @@ export default function Home() {
       });
 
       if (!response.ok) {
+        console.log("!ok")
         const errorData = await response.json(); // Captura resposta de erro do backend
         throw new Error(errorData.message || `Erro ${response.status}`);
       }
