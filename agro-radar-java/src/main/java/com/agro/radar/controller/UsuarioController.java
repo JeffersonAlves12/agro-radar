@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.agro.radar.dto.UsuarioDTO;
 import com.agro.radar.models.Usuario;
+import com.agro.radar.push.PushService;
 import com.agro.radar.services.UsuarioService;
 
 @RestController
@@ -23,6 +24,9 @@ public class UsuarioController {
 
     @Autowired
     private UsuarioService usuarioService;
+
+    @Autowired
+    private PushService pushService;
 
     @GetMapping
     public List<UsuarioDTO> listar() {
@@ -42,17 +46,33 @@ public class UsuarioController {
     @PostMapping
     public UsuarioDTO criar(@RequestBody Usuario usuario) {
         Usuario novoUsuario = usuarioService.salvar(usuario);
+
+        // Push para criação de usuário
+        pushService.enviarUsuarioCriadoEvento(novoUsuario.getNome(), novoUsuario.getEmail());
+
         return new UsuarioDTO(novoUsuario);
     }
 
     @PutMapping("/{id}")
     public UsuarioDTO atualizar(@PathVariable Long id, @RequestBody Usuario usuarioAtualizado) {
         Usuario usuario = usuarioService.atualizar(id, usuarioAtualizado);
+
+        // Push para atualização de usuário
+        pushService.enviarUsuarioAtualizadoEvento(usuario.getNome(), usuario.getEmail());
+
         return new UsuarioDTO(usuario);
     }
 
     @DeleteMapping("/{id}")
     public void deletar(@PathVariable Long id) {
+        // Buscar o usuário antes de deletar
+        Usuario usuario = usuarioService.buscarPorId(id)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        // Enviar o evento de exclusão
+        pushService.enviarUsuarioExcluidoEvento(usuario.getNome(), usuario.getEmail());
+
+        // Deletar o usuário
         usuarioService.deletar(id);
     }
 }

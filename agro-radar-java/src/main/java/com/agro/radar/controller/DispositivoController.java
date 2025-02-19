@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.agro.radar.dto.DispositivoDTO;
 import com.agro.radar.models.Dispositivo;
+import com.agro.radar.push.PushService;
 import com.agro.radar.services.DispositivoService;
 
 @RestController
@@ -23,6 +24,9 @@ public class DispositivoController {
 
     @Autowired
     private DispositivoService dispositivoService;
+
+    @Autowired
+    private PushService pushService;
 
     @GetMapping
     public List<DispositivoDTO> listar() {
@@ -49,17 +53,45 @@ public class DispositivoController {
     @PostMapping
     public DispositivoDTO criar(@RequestBody Dispositivo dispositivo) {
         Dispositivo novoDispositivo = dispositivoService.salvar(dispositivo);
+
+        // Push para criação de dispositivo
+        pushService.enviarDispositivoCriadoEvento(
+            novoDispositivo.getId(),
+            novoDispositivo.getNome(),
+            novoDispositivo.getLocalizacao()
+        );
+
         return new DispositivoDTO(novoDispositivo);
     }
 
     @PutMapping("/{id}")
     public DispositivoDTO atualizar(@PathVariable Long id, @RequestBody Dispositivo dispositivoAtualizado) {
         Dispositivo dispositivo = dispositivoService.atualizar(id, dispositivoAtualizado);
+
+        // Push para atualização de dispositivo
+        pushService.enviarDispositivoAtualizadoEvento(
+            dispositivo.getId(),
+            dispositivo.getNome(),
+            dispositivo.getLocalizacao()
+        );
+
         return new DispositivoDTO(dispositivo);
     }
 
     @DeleteMapping("/{id}")
     public void deletar(@PathVariable Long id) {
+
+        // Buscar o dispositivo antes de deletar
+        Dispositivo dispositivo = dispositivoService.buscarPorId(id)
+                .orElseThrow(() -> new RuntimeException("Dispositivo não encontrado"));
+
+        // Push para exclusão de dispositivo
+        pushService.enviarDispositivoExcluidoEvento(
+            dispositivo.getId(),
+            dispositivo.getNome(),
+            dispositivo.getLocalizacao()
+        );
+        
         dispositivoService.deletar(id);
     }
 }

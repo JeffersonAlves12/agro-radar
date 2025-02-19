@@ -3,7 +3,6 @@ package com.agro.radar.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-// Importar BadCredentialsException
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -16,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.agro.radar.dto.AuthDTO;
 import com.agro.radar.dto.UsuarioDTO;
 import com.agro.radar.models.Usuario;
+import com.agro.radar.push.PushService;
 import com.agro.radar.security.JwtTokenProvider;
 import com.agro.radar.services.UsuarioService;
 
@@ -32,6 +32,9 @@ public class AuthController {
     @Autowired
     private UsuarioService usuarioService;
 
+    @Autowired
+    private PushService pushService;
+
     @PostMapping("/login")
     public ResponseEntity<AuthDTO> autenticar(@RequestBody LoginRequest loginRequest) {
 
@@ -46,11 +49,17 @@ public class AuthController {
             String email = authentication.getName();
             String token = jwtTokenProvider.gerarToken(email);
 
+            // Armazena o token no PushService
+            pushService.armazenarToken(token);
+
             // Busca o usuário completo
             Usuario usuario = usuarioService.buscarPorEmail(email)
                                             .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado"));
 
             UsuarioDTO usuarioDTO = new UsuarioDTO(usuario);
+
+            // Envia evento de login para o T2 por push
+            pushService.enviarLoginEvento(usuario.getNome(), usuario.getEmail());
 
             // Retorna o AuthDTO com o token e os dados do usuário
             return ResponseEntity.ok(new AuthDTO(token, usuarioDTO));
