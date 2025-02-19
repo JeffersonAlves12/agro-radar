@@ -1,24 +1,9 @@
 version: '3'
 services:
-  # jenkins:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile.jenkins
-  #   privileged: true
-  #   user: root
-  #   ports:
-  #     - "8081:8080"
-  #     - "50000:50000"
-  #   volumes:
-  #     - jenkins_home:/var/jenkins_home
-  #     - /var/run/docker.sock:/var/run/docker.sock
-  #     - .:/workspace
-  #   container_name: jenkins
-  #   restart: unless-stopped
-   
+  # Serviço Java + Dependências
   java:
     build:
-      context: ./agro-radar-java/
+      context: ./agro-radar-java
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
@@ -27,64 +12,45 @@ services:
         condition: service_healthy
       mongo:
         condition: service_healthy
-     
-  nextjs:
-    build:
-      context: ./agro-radar-next-new/
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    depends_on:
-      - java
-     
-  node:
-    build:
-      context: ./agro-radar-node/
-      dockerfile: Dockerfile
-    ports:
-      - 3001:3001
-    depends_on:
-      mongo:
-        condition: service_healthy
-     
-  proxy:
-    build: ./nginx
-    ports:
-      - "80:80"
-    depends_on:
-      - nextjs
-      - java
-      - node
-     
+
   postgres:
     image: postgres:latest
-    container_name: postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: agro_radar
-    ports:
-      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
-     
+
   mongo:
     image: mongo:latest
-    container_name: mongo
-    ports:
-      - "27017:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: root
       MONGO_INITDB_DATABASE: agro_radar
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      test: ["CMD-SHELL", "mongosh --eval \"db.adminCommand('ping')\""]
       interval: 5s
       timeout: 5s
       retries: 5
 
-# volumes:
-#   jenkins_home:
+  # Outros serviços (comentados inicialmente)
+  # nextjs:
+  #   build: ./agro-radar-next-new
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - java
+
+  # node:
+  #   build: ./agro-radar-node
+  #   ports:
+  #     - "3001:3001"
+
+  # proxy:
+  #   build: ./nginx
+  #   ports:
+  #     - "80:80"
