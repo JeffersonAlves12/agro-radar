@@ -1,0 +1,18 @@
+FROM jenkins/jenkins:lts
+
+USER root
+
+# Instala dependências necessárias
+RUN apt-get update && \
+    apt-get install -y \
+    curl \
+    docker.io \
+    docker-compose-plugin
+
+# Garante que o grupo docker existe
+RUN groupadd -f docker
+
+# Adiciona jenkins ao grupo docker
+RUN usermod -aG docker jenkins
+
+USER jenkins
