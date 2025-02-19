@@ -2,7 +2,8 @@ pipeline {
     agent any
     
     environment {
-        DOCKER_COMPOSE_FILE = '/workspace/docker-compose.yml'
+        // Ajustando o caminho para a raiz do workspace
+        DOCKER_COMPOSE_FILE = '../docker-compose.yml'
     }
     
     stages {
@@ -15,10 +16,18 @@ pipeline {
         stage('Build and Deploy') {
             steps {
                 script {
-                    // Constrói apenas o serviço Java
+                    // Verifica se docker-compose está instalado
+                    sh 'which docker-compose || (echo "Docker Compose not found" && exit 1)'
+                    
+                    // Para containers existentes se houver
+                    sh """
+                        docker-compose -f ${DOCKER_COMPOSE_FILE} down || true
+                    """
+                    
+                    // Constrói e inicia os serviços
                     sh """
                         docker-compose -f ${DOCKER_COMPOSE_FILE} build java
-                        docker-compose -f ${DOCKER_COMPOSE_FILE} up -d java postgress mongo
+                        docker-compose -f ${DOCKER_COMPOSE_FILE} up -d java postgres mongo
                     """
                 }
             }
@@ -27,10 +36,18 @@ pipeline {
         stage('Health Check') {
             steps {
                 script {
-                    // Espera 30 segundos para a aplicação iniciar e faz health check
+                    // Adiciona retry mais robusto para o health check
                     sh """
-                        sleep 30
-                        curl --retry 5 --retry-delay 10 http://localhost:8080/actuator/health || exit 1
+                        for i in \$(seq 1 6); do
+                            if curl -s http://localhost:8080/actuator/health | grep -q "UP"; then
+                                echo "Application is healthy"
+                                exit 0
+                            fi
+                            echo "Waiting for application to become healthy (attempt \$i/6)..."
+                            sleep 10
+                        done
+                        echo "Application failed to become healthy"
+                        exit 1
                     """
                 }
             }
@@ -40,11 +57,15 @@ pipeline {
     post {
         failure {
             script {
-                // Em caso de falha, para os containers
+                // Em caso de falha, para e remove os containers
                 sh """
-                    docker-compose -f ${DOCKER_COMPOSE_FILE} stop java
-                    docker-compose -f ${DOCKER_COMPOSE_FILE} rm -f java
+                    docker-compose -f ${DOCKER_COMPOSE_FILE} down || true
                 """
+            }
+        }
+        success {
+            script {
+                echo "Pipeline completed successfully!"
             }
         }
         always {
