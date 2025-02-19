@@ -78,7 +78,7 @@ export default function Home() {
         }
 
         // Redireciona para a página de mapas
-        router.push("/");
+        router.push("/dispositivos");
       } else {
         throw new Error("Token não recebido do servidor");
       }
