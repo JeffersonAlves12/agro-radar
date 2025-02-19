@@ -1,57 +1,54 @@
 pipeline {
-    agent any // Ou especifique um label para um agente habilitado para Docker
+    agent any
+    
     environment {
-        IMAGE_NAME = 'agro-radar-java'
-        IMAGE_TAG  = "${env.BUILD_NUMBER}"
-        DOCKER_REGISTRY = 'seu-registro-docker.com' // Substitua pelo seu registro
-        DOCKER_CREDENTIALS_ID = 'suas-credenciais-docker-id' // ID das credenciais do Jenkins
+        DOCKER_COMPOSE_FILE = '/workspace/docker-compose.yml'
     }
+    
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
-
-        stage('Build Docker Image') {
+        
+        stage('Build and Deploy') {
             steps {
                 script {
-                    def dockerImage = docker.build("${IMAGE_NAME}:${IMAGE_TAG}", ".")
+                    // Constrói apenas o serviço Java
+                    sh """
+                        docker-compose -f ${DOCKER_COMPOSE_FILE} build java
+                        docker-compose -f ${DOCKER_COMPOSE_FILE} up -d java postgress mongo
+                    """
                 }
             }
         }
-
-        stage('Run Container (Opcional - para teste)') {
+        
+        stage('Health Check') {
             steps {
                 script {
-                    sh "docker run -d --name ${IMAGE_NAME}_container -p 8080:8080 ${IMAGE_NAME}:${IMAGE_TAG}"
-                }
-            }
-        }
-
-        stage('Push Docker Image') {
-            when {
-                expression { return env.BRANCH_NAME == 'main' }
-            }
-            steps {
-                script {
-                    withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS_ID}", usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                        docker.withRegistry("https://${DOCKER_REGISTRY}", DOCKER_CREDENTIALS_ID) {
-                            dockerImage.push("${IMAGE_TAG}")
-                        }
-                    }
+                    // Espera 30 segundos para a aplicação iniciar e faz health check
+                    sh """
+                        sleep 30
+                        curl --retry 5 --retry-delay 10 http://localhost:8080/actuator/health || exit 1
+                    """
                 }
             }
         }
     }
+    
     post {
-        always {
-            cleanWs()
-        }
         failure {
             script {
-                sh "docker rm -f ${IMAGE_NAME}_container || true" // Só se você executou um container
+                // Em caso de falha, para os containers
+                sh """
+                    docker-compose -f ${DOCKER_COMPOSE_FILE} stop java
+                    docker-compose -f ${DOCKER_COMPOSE_FILE} rm -f java
+                """
             }
+        }
+        always {
+            cleanWs()
         }
     }
 }
