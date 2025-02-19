@@ -67,6 +67,20 @@ const deletarEventos = async (req, res) => {
   }
 };
 
+const deletarTodosEventos = async (req, res) => {
+  try {
+    // Deleta todos os documentos da coleção
+    const resultado = await Evento.deleteMany({});
+    res.status(200).json({
+      message: 'Todos os eventos foram deletados com sucesso',
+      quantidade: resultado.deletedCount,
+    });
+  } catch (error) {
+    console.error('Erro ao deletar todos os eventos:', error);
+    res.status(500).json({ error: 'Erro ao deletar todos os eventos' });
+  }
+};
+
 // Filtra eventos por critérios
 const filtrarEventos = async (req, res) => {
   try {
@@ -94,4 +108,5 @@ module.exports = {
   criarEvento,
   deletarEventos,
   filtrarEventos,
+  deletarTodosEventos,
 };

@@ -1,6 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { listarEventos, criarEvento, deletarEventos, filtrarEventos } = require('../controllers/eventoController');
+const {
+  listarEventos,
+  criarEvento,
+  deletarEventos,
+  filtrarEventos,
+  deletarTodosEventos,
+} = require('../controllers/eventoController');
 const autenticarToken = require('../middlewares/authMiddleware');
 
 /**
@@ -34,14 +40,13 @@ const autenticarToken = require('../middlewares/authMiddleware');
  *           description: Momento em que o evento ocorreu.
  */
 
-
 /**
  * @swagger
  * /api/eventos:
  *   get:
  *     summary: Lista todos os eventos
  *     security:
- *       - bearerAuth: [] # Adiciona autenticação
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Lista de eventos
@@ -59,7 +64,7 @@ const autenticarToken = require('../middlewares/authMiddleware');
  *   post:
  *     summary: Cria um novo evento
  *     security:
- *       - bearerAuth: [] # Adiciona autenticação
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -77,7 +82,7 @@ const autenticarToken = require('../middlewares/authMiddleware');
  *   delete:
  *     summary: Deleta eventos com base nos filtros fornecidos
  *     security:
- *       - bearerAuth: [] # Adiciona autenticação
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: tipo
@@ -116,7 +121,7 @@ const autenticarToken = require('../middlewares/authMiddleware');
  *   get:
  *     summary: Filtra eventos por critérios
  *     security:
- *       - bearerAuth: [] # Adiciona autenticação
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: tipo
@@ -146,11 +151,34 @@ const autenticarToken = require('../middlewares/authMiddleware');
  *                 $ref: '#/components/schemas/Evento'
  */
 
+/**
+ * @swagger
+ * /api/eventos/tudo:
+ *   delete:
+ *     summary: Deleta todos os eventos
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Todos os eventos foram deletados com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 quantidade:
+ *                   type: number
+ *       500:
+ *         description: Erro ao deletar todos os eventos
+ */
 
 // Rotas protegidas por autenticação
 router.get('/eventos', autenticarToken, listarEventos);
 router.post('/eventos', autenticarToken, criarEvento);
 router.delete('/eventos', autenticarToken, deletarEventos);
 router.get('/eventos/filtro', autenticarToken, filtrarEventos);
+router.delete('/eventos/tudo', autenticarToken, deletarTodosEventos); // Nova rota
 
 module.exports = router;
