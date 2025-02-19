@@ -15,23 +15,19 @@ export default function EventoListPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Exemplo: token fixo (só para teste). 
-  // Em um cenário real, você buscaria esse token do localStorage ou contexto
-  // após fazer login e recebê-lo da sua API.
-  const token = 'eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbkBhZ3JvLmNvbSIsImlhdCI6MzYwMCwiZXhwIjoxNzM5NDExMDE0fQ.CO47oWaScyuI8WlZ9yfhj-yKKtRwd7oSc8pahEp0CORLwll9VPSN8PR9hqYMWIeX';
-
+  // Busca todos os eventos
   const fetchEventos = () => {
+    const token = localStorage.getItem('token'); 
     fetch('http://localhost:3001/api/eventos', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      mode: 'cors', // Adicionado para garantir CORS
+      mode: 'cors',
     })
       .then((response) => {
         if (!response.ok) {
-          // Se der erro (ex: 401 não autorizado), lança exceção
           throw new Error('Erro na resposta da rede (talvez token inválido ou expirado)');
         }
         return response.json();
@@ -44,6 +40,39 @@ export default function EventoListPage() {
         console.error(err);
         setError('Não foi possível carregar os eventos. Tente novamente mais tarde.');
         setLoading(false);
+      });
+  };
+
+  // Deleta todos os eventos
+  const handleDeleteAll = () => {
+    if (!window.confirm('Tem certeza que deseja deletar todos os eventos?')) {
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    fetch('http://localhost:3001/api/eventos/tudo', {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      mode: 'cors',
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Erro ao deletar todos os eventos');
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log(data);
+        alert(`Foram deletados ${data.quantidade} eventos.`);
+        // Atualiza a lista após a deleção
+        fetchEventos();
+      })
+      .catch((err) => {
+        console.error(err);
+        setError('Não foi possível deletar todos os eventos. Tente novamente mais tarde.');
       });
   };
 
@@ -72,6 +101,17 @@ export default function EventoListPage() {
   return (
     <div className="max-w-6xl mx-auto p-6 bg-green-50 min-h-screen">
       <h1 className="text-4xl font-bold text-center text-green-800 mb-8">Lista de Eventos</h1>
+
+      {/* Botão para deletar todos os eventos */}
+      <div className="text-center mb-8">
+        <button
+          onClick={handleDeleteAll}
+          className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+        >
+          Deletar Todos os Eventos
+        </button>
+      </div>
+
       {eventos.length === 0 ? (
         <p className="text-center text-green-700">Nenhum evento cadastrado.</p>
       ) : (
