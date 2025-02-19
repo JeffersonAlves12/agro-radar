@@ -1,19 +1,21 @@
 version: '3'
 services:
   jenkins:
-    image: jenkins/jenkins:lts
+    build:
+      context: .
+      dockerfile: Dockerfile.jenkins
     privileged: true
     user: root
     ports:
-      - "8081:8080"  # Mudado para 8081 pois 8080 já está em uso pelo Java
+      - "8081:8080"
       - "50000:50000"
     volumes:
       - jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
-      - .:/workspace  # Monta o diretório atual no container
+      - .:/workspace
     container_name: jenkins
     restart: unless-stopped
-    
+   
   java:
     build:
       context: ./agro-radar-java/
@@ -21,9 +23,11 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - postgress
-      - mongo
-      
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+     
   nextjs:
     build:
       context: ./agro-radar-next-new/
@@ -32,14 +36,15 @@ services:
       - "3000:3000"
     depends_on:
       - java
-      
+     
   node:
     build:
       context: ./agro-radar-node/
       dockerfile: Dockerfile
     depends_on:
-      - mongo
-      
+      mongo:
+        condition: service_healthy
+     
   proxy:
     build: ./nginx
     ports:
@@ -48,24 +53,36 @@ services:
       - nextjs
       - java
       - node
-      
-  postgress:
-    image: postgres
+     
+  postgres:
+    image: postgres:latest
+    container_name: postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: agro_radar
     ports:
       - "5432:5432"
-      
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+     
   mongo:
-    image: mongo
+    image: mongo:latest
+    container_name: mongo
     ports:
       - "27017:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: root
       MONGO_INITDB_DATABASE: agro_radar
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
   jenkins_home:
