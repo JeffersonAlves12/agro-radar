@@ -10,41 +10,45 @@ pipeline {
                 checkout scm
             }
         }
-        /* 
-         * Se desejar executar testes unitários antes de criar a imagem,
-         * você pode descomentar este stage e executar "mvn test" 
-         */
-        /*
-        stage('Test') {
-            steps {
-                sh 'mvn test'
-            }
-        }
-        */
+
         stage('Build Docker Image') {
             steps {
                 script {
-                    // O Dockerfile já realiza a construção completa (build + package)
-                    def dockerImage = docker.build("${IMAGE_NAME}:${IMAGE_TAG}")
+                    sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
                 }
             }
         }
-        /*
-        // Se necessário, adicione um stage para enviar a imagem para um repositório
+
+        stage('Run Container') {
+            steps {
+                script {
+                    sh "docker run -d --name ${IMAGE_NAME}_container -p 8080:8080 ${IMAGE_NAME}:${IMAGE_TAG}"
+                }
+            }
+        }
+
         stage('Push Docker Image') {
+            when {
+                expression { return env.BRANCH_NAME == 'main' } // Apenas para a branch principal
+            }
             steps {
                 script {
                     docker.withRegistry('https://seu-registro', 'credenciais-docker') {
-                        dockerImage.push()
+                        sh "docker tag ${IMAGE_NAME}:${IMAGE_TAG} seu-registro/${IMAGE_NAME}:${IMAGE_TAG}"
+                        sh "docker push seu-registro/${IMAGE_NAME}:${IMAGE_TAG}"
                     }
                 }
             }
         }
-        */
     }
     post {
         always {
             cleanWs()
+        }
+        failure {
+            script {
+                sh "docker rm -f ${IMAGE_NAME}_container || true"
+            }
         }
     }
 }
