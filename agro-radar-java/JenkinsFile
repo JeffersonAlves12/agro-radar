@@ -1,8 +1,10 @@
 pipeline {
-    agent any
+    agent any // Ou especifique um label para um agente habilitado para Docker
     environment {
         IMAGE_NAME = 'agro-radar-java'
         IMAGE_TAG  = "${env.BUILD_NUMBER}"
+        DOCKER_REGISTRY = 'seu-registro-docker.com' // Substitua pelo seu registro
+        DOCKER_CREDENTIALS_ID = 'suas-credenciais-docker-id' // ID das credenciais do Jenkins
     }
     stages {
         stage('Checkout') {
@@ -14,12 +16,12 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+                    def dockerImage = docker.build("${IMAGE_NAME}:${IMAGE_TAG}", ".")
                 }
             }
         }
 
-        stage('Run Container') {
+        stage('Run Container (Opcional - para teste)') {
             steps {
                 script {
                     sh "docker run -d --name ${IMAGE_NAME}_container -p 8080:8080 ${IMAGE_NAME}:${IMAGE_TAG}"
@@ -29,13 +31,14 @@ pipeline {
 
         stage('Push Docker Image') {
             when {
-                expression { return env.BRANCH_NAME == 'main' } // Apenas para a branch principal
+                expression { return env.BRANCH_NAME == 'main' }
             }
             steps {
                 script {
-                    docker.withRegistry('https://seu-registro', 'credenciais-docker') {
-                        sh "docker tag ${IMAGE_NAME}:${IMAGE_TAG} seu-registro/${IMAGE_NAME}:${IMAGE_TAG}"
-                        sh "docker push seu-registro/${IMAGE_NAME}:${IMAGE_TAG}"
+                    withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS_ID}", usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                        docker.withRegistry("https://${DOCKER_REGISTRY}", DOCKER_CREDENTIALS_ID) {
+                            dockerImage.push("${IMAGE_TAG}")
+                        }
                     }
                 }
             }
@@ -47,7 +50,7 @@ pipeline {
         }
         failure {
             script {
-                sh "docker rm -f ${IMAGE_NAME}_container || true"
+                sh "docker rm -f ${IMAGE_NAME}_container || true" // Só se você executou um container
             }
         }
     }
