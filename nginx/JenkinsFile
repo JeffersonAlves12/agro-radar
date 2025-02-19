@@ -1,0 +1,30 @@
+pipeline {
+    agent any
+    environment {
+        IMAGE_NAME = 'nginx-agro-radar'
+        IMAGE_TAG  = "${env.BUILD_NUMBER}"
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        /*
+         * Se você quiser validar a configuração do NGINX, pode adicionar um stage
+         * para testar o arquivo de configuração, por exemplo, com "nginx -t".
+         */
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    def dockerImage = docker.build("${IMAGE_NAME}:${IMAGE_TAG}")
+                }
+            }
+        }
+    }
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}

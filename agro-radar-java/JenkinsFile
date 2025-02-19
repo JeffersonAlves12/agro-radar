@@ -1,0 +1,50 @@
+pipeline {
+    agent any
+    environment {
+        IMAGE_NAME = 'agro-radar-java'
+        IMAGE_TAG  = "${env.BUILD_NUMBER}"
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        /* 
+         * Se desejar executar testes unitários antes de criar a imagem,
+         * você pode descomentar este stage e executar "mvn test" 
+         */
+        /*
+        stage('Test') {
+            steps {
+                sh 'mvn test'
+            }
+        }
+        */
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    // O Dockerfile já realiza a construção completa (build + package)
+                    def dockerImage = docker.build("${IMAGE_NAME}:${IMAGE_TAG}")
+                }
+            }
+        }
+        /*
+        // Se necessário, adicione um stage para enviar a imagem para um repositório
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    docker.withRegistry('https://seu-registro', 'credenciais-docker') {
+                        dockerImage.push()
+                    }
+                }
+            }
+        }
+        */
+    }
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}
