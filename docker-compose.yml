@@ -1,6 +1,6 @@
 version: '3'
 services:
-  # Serviço Java + Dependências
+  # Backend Java + Bancos
   java:
     build:
       context: ./agro-radar-java
@@ -37,20 +37,21 @@ services:
       timeout: 5s
       retries: 5
 
-  # Outros serviços (comentados inicialmente)
-  # nextjs:
-  #   build: ./agro-radar-next-new
-  #   ports:
-  #     - "3000:3000"
-  #   depends_on:
-  #     - java
+  # Frontend Next.js
+  nextjs:
+    build:
+      context: ./agro-radar-next-new
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - java  # Espera o Java subir primeiro
 
-  # node:
-  #   build: ./agro-radar-node
-  #   ports:
-  #     - "3001:3001"
-
-  # proxy:
-  #   build: ./nginx
-  #   ports:
-  #     - "80:80"
+  # Proxy Nginx
+  nginx:
+    build: ./nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - nextjs
+      - java
