@@ -1,0 +1,54 @@
+pipeline {
+    agent any
+    
+    environment {
+        DOCKER_COMPOSE_FILE = '/workspace/docker-compose.yml'
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        
+        stage('Build and Deploy') {
+            steps {
+                script {
+                    // Constrói apenas o serviço Java
+                    sh """
+                        docker-compose -f ${DOCKER_COMPOSE_FILE} build java
+                        docker-compose -f ${DOCKER_COMPOSE_FILE} up -d java postgress mongo
+                    """
+                }
+            }
+        }
+        
+        stage('Health Check') {
+            steps {
+                script {
+                    // Espera 30 segundos para a aplicação iniciar e faz health check
+                    sh """
+                        sleep 30
+                        curl --retry 5 --retry-delay 10 http://localhost:8080/actuator/health || exit 1
+                    """
+                }
+            }
+        }
+    }
+    
+    post {
+        failure {
+            script {
+                // Em caso de falha, para os containers
+                sh """
+                    docker-compose -f ${DOCKER_COMPOSE_FILE} stop java
+                    docker-compose -f ${DOCKER_COMPOSE_FILE} rm -f java
+                """
+            }
+        }
+        always {
+            cleanWs()
+        }
+    }
+}

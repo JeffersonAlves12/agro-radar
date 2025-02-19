@@ -1,0 +1,36 @@
+pipeline {
+    agent any
+    environment {
+        IMAGE_NAME = 'agro-radar-node'
+        IMAGE_TAG  = "${env.BUILD_NUMBER}"
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        /* 
+         * Caso queira rodar testes via npm, adicione um stage antes do build.
+         * Exemplo:
+         *
+         * stage('Test') {
+         *    steps {
+         *       sh 'npm test'
+         *    }
+         * }
+         */
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    def dockerImage = docker.build("${IMAGE_NAME}:${IMAGE_TAG}")
+                }
+            }
+        }
+    }
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}

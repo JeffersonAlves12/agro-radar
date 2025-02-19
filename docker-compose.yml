@@ -1,6 +1,19 @@
 version: '3'
-
 services:
+  jenkins:
+    image: jenkins/jenkins:lts
+    privileged: true
+    user: root
+    ports:
+      - "8081:8080"  # Mudado para 8081 pois 8080 já está em uso pelo Java
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - .:/workspace  # Monta o diretório atual no container
+    container_name: jenkins
+    restart: unless-stopped
+    
   java:
     build:
       context: ./agro-radar-java/
@@ -10,7 +23,7 @@ services:
     depends_on:
       - postgress
       - mongo
-
+      
   nextjs:
     build:
       context: ./agro-radar-next-new/
@@ -19,14 +32,14 @@ services:
       - "3000:3000"
     depends_on:
       - java
-
+      
   node:
     build:
       context: ./agro-radar-node/
       dockerfile: Dockerfile
     depends_on:
       - mongo
-
+      
   proxy:
     build: ./nginx
     ports:
@@ -35,7 +48,7 @@ services:
       - nextjs
       - java
       - node
-
+      
   postgress:
     image: postgres
     environment:
@@ -44,7 +57,7 @@ services:
       POSTGRES_DB: agro_radar
     ports:
       - "5432:5432"
-
+      
   mongo:
     image: mongo
     ports:
@@ -53,3 +66,6 @@ services:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: root
       MONGO_INITDB_DATABASE: agro_radar
+
+volumes:
+  jenkins_home:
