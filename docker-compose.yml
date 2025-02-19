@@ -1,6 +1,6 @@
-version: '3'
+version: '3.8'
+
 services:
-  # Backend Java + Bancos
   java:
     build:
       context: ./agro-radar-java
@@ -9,9 +9,22 @@ services:
       - "8080:8080"
     depends_on:
       postgres:
-        condition: service_healthy
-      mongo:
-        condition: service_healthy
+        condition: service_healthy  # Dependência do PostgreSQL
+
+  nextjs:
+    build:
+      context: ./agro-radar-next-new
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+
+  nginx:  # SERVIÇO NGINX MANTIDO
+    build: ./nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - nextjs
+      - java
 
   postgres:
     image: postgres:latest
@@ -19,39 +32,23 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: agro_radar
+    ports:
+      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  mongo:
-    image: mongo:latest
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: root
-      MONGO_INITDB_DATABASE: agro_radar
-    healthcheck:
-      test: ["CMD-SHELL", "mongosh --eval \"db.adminCommand('ping')\""]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  # Frontend Next.js
-  nextjs:
-    build:
-      context: ./agro-radar-next-new
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    depends_on:
-      - java  # Espera o Java subir primeiro
-
-  # Proxy Nginx
-  nginx:
-    build: ./nginx
-    ports:
-      - "80:80"
-    depends_on:
-      - nextjs
-      - java
+  # #############################################
+  # MongoDB (Comentado)
+  # #############################################
+  
+  # mongo:
+  #   image: mongo:latest
+  #   environment:
+  #     MONGO_INITDB_ROOT_USERNAME: root
+  #     MONGO_INITDB_ROOT_PASSWORD: root
+  #     MONGO_INITDB_DATABASE: agro_radar
+  #   ports:
+  #     - "27017:27017"
