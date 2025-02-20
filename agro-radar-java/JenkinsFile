@@ -16,8 +16,8 @@ pipeline {
         
         stage('Build') {
             steps {
-                // Navega para o diretório do projeto Java
-                dir('agro-radar-java') {
+                // Navega para o diretório correto do projeto Java
+                dir('agro-radar/agro-radar-java') {
                     // Executa o build Maven
                     sh 'mvn clean package -DskipTests'
                 }
@@ -26,7 +26,7 @@ pipeline {
         
         stage('Test') {
             steps {
-                dir('agro-radar-java') {
+                dir('agro-radar/agro-radar-java') {
                     // Executa os testes
                     sh 'mvn test'
                 }
@@ -35,7 +35,7 @@ pipeline {
         
         stage('Docker Build') {
             steps {
-                dir('agro-radar-java') {
+                dir('agro-radar/agro-radar-java') {
                     // Constrói a imagem Docker
                     sh 'docker build -t agro-radar-java .'
                 }
