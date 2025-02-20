@@ -1,75 +1,54 @@
 pipeline {
     agent any
     
-    environment {
-        // Ajustando o caminho para a raiz do workspace
-        DOCKER_COMPOSE_FILE = '../docker-compose.yml'
+    tools {
+        maven 'Maven 3.8.4'
+        jdk 'JDK 17'
     }
     
     stages {
         stage('Checkout') {
             steps {
+                // Checkout do código fonte
                 checkout scm
             }
         }
         
-        stage('Build and Deploy') {
+        stage('Build') {
             steps {
-                script {
-                    // Verifica se docker-compose está instalado
-                    sh 'which docker-compose || (echo "Docker Compose not found" && exit 1)'
-                    
-                    // Para containers existentes se houver
-                    sh """
-                        docker-compose -f ${DOCKER_COMPOSE_FILE} down || true
-                    """
-                    
-                    // Constrói e inicia os serviços
-                    sh """
-                        docker-compose -f ${DOCKER_COMPOSE_FILE} build java
-                        docker-compose -f ${DOCKER_COMPOSE_FILE} up -d java postgres mongo
-                    """
+                // Navega para o diretório do projeto Java
+                dir('agro-radar-java') {
+                    // Executa o build Maven
+                    sh 'mvn clean package -DskipTests'
                 }
             }
         }
         
-        stage('Health Check') {
+        stage('Test') {
             steps {
-                script {
-                    // Adiciona retry mais robusto para o health check
-                    sh """
-                        for i in \$(seq 1 6); do
-                            if curl -s http://localhost:8080/actuator/health | grep -q "UP"; then
-                                echo "Application is healthy"
-                                exit 0
-                            fi
-                            echo "Waiting for application to become healthy (attempt \$i/6)..."
-                            sleep 10
-                        done
-                        echo "Application failed to become healthy"
-                        exit 1
-                    """
+                dir('agro-radar-java') {
+                    // Executa os testes
+                    sh 'mvn test'
+                }
+            }
+        }
+        
+        stage('Docker Build') {
+            steps {
+                dir('agro-radar-java') {
+                    // Constrói a imagem Docker
+                    sh 'docker build -t agro-radar-java .'
                 }
             }
         }
     }
     
     post {
-        failure {
-            script {
-                // Em caso de falha, para e remove os containers
-                sh """
-                    docker-compose -f ${DOCKER_COMPOSE_FILE} down || true
-                """
-            }
-        }
         success {
-            script {
-                echo "Pipeline completed successfully!"
-            }
+            echo 'Pipeline executado com sucesso!'
         }
-        always {
-            cleanWs()
+        failure {
+            echo 'Pipeline falhou!'
         }
     }
 }
