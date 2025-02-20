@@ -62,7 +62,7 @@ public class AuthController {
             // Enviar mensagem para enviar e-mail
             messageService.sendEmailMessage(
                 "Login Realizado",
-                "jafelix495@gmail.com",
+                "jafelix495@gmail.com", "davchin93@gmail.com",
                 String.format("O usuário %s (%s) fez login com sucesso.", usuario.getNome(), usuario.getEmail())
             );
 
