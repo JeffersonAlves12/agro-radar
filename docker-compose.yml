@@ -44,11 +44,11 @@ services:
   # MongoDB (Comentado)
   # #############################################
   
-  # mongo:
-  #   image: mongo:latest
-  #   environment:
-  #     MONGO_INITDB_ROOT_USERNAME: root
-  #     MONGO_INITDB_ROOT_PASSWORD: root
-  #     MONGO_INITDB_DATABASE: agro_radar
-  #   ports:
-  #     - "27017:27017"
+  mongo:
+     image: mongo:latest
+     environment:
+       MONGO_INITDB_ROOT_USERNAME: root
+       MONGO_INITDB_ROOT_PASSWORD: root
+       MONGO_INITDB_DATABASE: agro_radar
+     ports:
+       - "27017:27017"
