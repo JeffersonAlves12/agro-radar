@@ -1,20 +1,19 @@
-# Usa a imagem oficial do Node.js como base
-FROM node:18
-
-# Define o diretório de trabalho dentro do container
+FROM node:18 AS builder
 WORKDIR /app
 
-# Copia o package.json e package-lock.json para o container
 COPY package*.json ./
+RUN npm install --production=false  # Força instalação completa para dev
 
-# Instala as dependências
-RUN npm install
-
-# Copia o restante do código da aplicação para o container
 COPY . .
+RUN npm run build  # Gera o build otimizado
 
-# Expõe a porta 3000 (porta padrão do Next.js)
+# Etapa final: Executa apenas o necessário
+FROM node:18-slim
+WORKDIR /app
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/public ./public
+
 EXPOSE 3000
-
-# Comando para iniciar a aplicação em modo de desenvolvimento
-CMD ["npm", "run", "dev"]
+CMD ["npm", "start"]  # Usa o build otimizado
