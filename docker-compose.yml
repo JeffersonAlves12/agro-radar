@@ -39,11 +39,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-
-  # #############################################
-  # MongoDB (Comentado)
-  # #############################################
-  
+      
   mongo:
      image: mongo:latest
      environment:
