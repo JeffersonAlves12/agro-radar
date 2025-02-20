@@ -33,18 +33,12 @@ services:
 
   nextjs:
     build:
-      context: ./agro-radar-next-new
+      context: ./agro-radar-next-new/
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
     depends_on:
       - java
-    environment:
-      NODE_ENV: development
-    deploy:
-      resources:
-        limits:
-          memory: 1g  # Limita uso de memória para otimizar o build
 
   nginx:
     build:

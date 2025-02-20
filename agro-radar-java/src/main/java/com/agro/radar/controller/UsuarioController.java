@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.agro.radar.dto.UsuarioDTO;
 import com.agro.radar.models.Usuario;
 import com.agro.radar.push.PushService;
+import com.agro.radar.services.MessageService;
 import com.agro.radar.services.UsuarioService;
 
 @RestController
@@ -27,6 +28,9 @@ public class UsuarioController {
 
     @Autowired
     private PushService pushService;
+
+    @Autowired
+    private MessageService messageService;
 
     @GetMapping
     public List<UsuarioDTO> listar() {
@@ -47,6 +51,13 @@ public class UsuarioController {
     public UsuarioDTO criar(@RequestBody Usuario usuario) {
         Usuario novoUsuario = usuarioService.salvar(usuario);
 
+        // Enviar mensagem para enviar e-mail
+        messageService.sendEmailMessage(
+            "Novo Usuário Criado",
+            "jafelix495@gmail.com",
+            String.format("O usuário %s (%s) foi criado com sucesso.", novoUsuario.getNome(), novoUsuario.getEmail())
+        );
+
         // Push para criação de usuário
         pushService.enviarUsuarioCriadoEvento(novoUsuario.getNome(), novoUsuario.getEmail());
 
@@ -57,6 +68,13 @@ public class UsuarioController {
     public UsuarioDTO atualizar(@PathVariable Long id, @RequestBody Usuario usuarioAtualizado) {
         Usuario usuario = usuarioService.atualizar(id, usuarioAtualizado);
 
+        // Enviar mensagem para enviar e-mail
+        messageService.sendEmailMessage(
+            "Usuário Atualizado",
+            "jafelix495@gmail.com",
+            String.format("O usuário %s (%s) foi atualizado com sucesso.", usuario.getNome(), usuario.getEmail())
+        );
+
         // Push para atualização de usuário
         pushService.enviarUsuarioAtualizadoEvento(usuario.getNome(), usuario.getEmail());
 
@@ -65,14 +83,19 @@ public class UsuarioController {
 
     @DeleteMapping("/{id}")
     public void deletar(@PathVariable Long id) {
-        // Buscar o usuário antes de deletar
         Usuario usuario = usuarioService.buscarPorId(id)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-        // Enviar o evento de exclusão
+        // Enviar mensagem para enviar e-mail
+        messageService.sendEmailMessage(
+            "Usuário Excluído",
+            "jafelix495@gmail.com",
+            String.format("O usuário %s (%s) foi excluído com sucesso.", usuario.getNome(), usuario.getEmail())
+        );
+
+        // Push para exclusão de usuário
         pushService.enviarUsuarioExcluidoEvento(usuario.getNome(), usuario.getEmail());
 
-        // Deletar o usuário
         usuarioService.deletar(id);
     }
 }

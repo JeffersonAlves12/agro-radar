@@ -17,6 +17,7 @@ import com.agro.radar.dto.UsuarioDTO;
 import com.agro.radar.models.Usuario;
 import com.agro.radar.push.PushService;
 import com.agro.radar.security.JwtTokenProvider;
+import com.agro.radar.services.MessageService;
 import com.agro.radar.services.UsuarioService;
 
 @RestController
@@ -35,9 +36,11 @@ public class AuthController {
     @Autowired
     private PushService pushService;
 
+    @Autowired
+    private MessageService messageService;
+
     @PostMapping("/login")
     public ResponseEntity<AuthDTO> autenticar(@RequestBody LoginRequest loginRequest) {
-
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
@@ -54,28 +57,30 @@ public class AuthController {
 
             // Busca o usuário completo
             Usuario usuario = usuarioService.buscarPorEmail(email)
-                                            .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado"));
+                    .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado"));
 
-            UsuarioDTO usuarioDTO = new UsuarioDTO(usuario);
+            // Enviar mensagem para enviar e-mail
+            messageService.sendEmailMessage(
+                "Login Realizado",
+                "jafelix495@gmail.com",
+                String.format("O usuário %s (%s) fez login com sucesso.", usuario.getNome(), usuario.getEmail())
+            );
 
             // Envia evento de login para o T2 por push
             pushService.enviarLoginEvento(usuario.getNome(), usuario.getEmail());
 
-            // Retorna o AuthDTO com o token e os dados do usuário
+            UsuarioDTO usuarioDTO = new UsuarioDTO(usuario);
             return ResponseEntity.ok(new AuthDTO(token, usuarioDTO));
 
         } catch (BadCredentialsException ex) {
-            // Credenciais inválidas
             return ResponseEntity.status(401).build();
         }
     }
 
-    // Classe auxiliar para receber o login
     public static class LoginRequest {
         private String email;
         private String senha;
 
-        // Getters e Setters
         public String getEmail() { return email; }
         public void setEmail(String email) { this.email = email; }
         public String getSenha() { return senha; }

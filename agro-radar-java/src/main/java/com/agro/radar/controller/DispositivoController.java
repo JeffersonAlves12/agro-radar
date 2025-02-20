@@ -35,21 +35,16 @@ public class DispositivoController {
     @GetMapping
     public List<DispositivoDTO> listar() {
         List<Dispositivo> dispositivos = dispositivoService.buscarTodos();
-    
-        dispositivos.forEach(dispositivo -> {
-            dispositivo.getSensores().size(); // Inicializa a coleção sensores
-        });
-    
+        dispositivos.forEach(dispositivo -> dispositivo.getSensores().size());
         return dispositivos.stream()
                 .map(DispositivoDTO::new)
                 .collect(Collectors.toList());
     }
-    
+
     @GetMapping("/{id}")
     public DispositivoDTO buscarPorId(@PathVariable Long id) {
         Dispositivo dispositivo = dispositivoService.buscarPorId(id)
                 .orElseThrow(() -> new RuntimeException("Dispositivo não encontrado"));
-        
         dispositivo.getSensores().size();
         return new DispositivoDTO(dispositivo);
     }
@@ -59,12 +54,12 @@ public class DispositivoController {
         Dispositivo novoDispositivo = dispositivoService.salvar(dispositivo);
 
         // Enviar mensagem para enviar e-mail
-    messageService.sendEmailMessage(
-        "Novo Dispositivo Criado",
-        "jafelix495@gmail.com", // Substitua pelo e-mail do destinatário
-        String.format("O dispositivo %s foi criado com sucesso na localização %s.",
-                novoDispositivo.getNome(), novoDispositivo.getLocalizacao())
-    );
+        messageService.sendEmailMessage(
+            "Novo Dispositivo Criado",
+            "jafelix495@gmail.com",
+            String.format("O dispositivo %s foi criado com sucesso na localização %s.",
+                    novoDispositivo.getNome(), novoDispositivo.getLocalizacao())
+        );
 
         // Push para criação de dispositivo
         pushService.enviarDispositivoCriadoEvento(
@@ -80,6 +75,14 @@ public class DispositivoController {
     public DispositivoDTO atualizar(@PathVariable Long id, @RequestBody Dispositivo dispositivoAtualizado) {
         Dispositivo dispositivo = dispositivoService.atualizar(id, dispositivoAtualizado);
 
+        // Enviar mensagem para enviar e-mail
+        messageService.sendEmailMessage(
+            "Dispositivo Atualizado",
+            "jafelix495@gmail.com",
+            String.format("O dispositivo %s na localização %s foi atualizado com sucesso.",
+                    dispositivo.getNome(), dispositivo.getLocalizacao())
+        );
+
         // Push para atualização de dispositivo
         pushService.enviarDispositivoAtualizadoEvento(
             dispositivo.getId(),
@@ -92,10 +95,16 @@ public class DispositivoController {
 
     @DeleteMapping("/{id}")
     public void deletar(@PathVariable Long id) {
-
-        // Buscar o dispositivo antes de deletar
         Dispositivo dispositivo = dispositivoService.buscarPorId(id)
                 .orElseThrow(() -> new RuntimeException("Dispositivo não encontrado"));
+
+        // Enviar mensagem para enviar e-mail
+        messageService.sendEmailMessage(
+            "Dispositivo Excluído",
+            "jafelix495@gmail.com",
+            String.format("O dispositivo %s na localização %s foi excluído com sucesso.",
+                    dispositivo.getNome(), dispositivo.getLocalizacao())
+        );
 
         // Push para exclusão de dispositivo
         pushService.enviarDispositivoExcluidoEvento(
@@ -103,7 +112,7 @@ public class DispositivoController {
             dispositivo.getNome(),
             dispositivo.getLocalizacao()
         );
-        
+
         dispositivoService.deletar(id);
     }
 }

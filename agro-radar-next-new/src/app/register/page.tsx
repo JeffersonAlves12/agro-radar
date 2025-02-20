@@ -7,7 +7,7 @@ export default function Registro() {
   const [senha, setSenha] = useState('');
   const [mensagem, setMensagem] = useState('');
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: { preventDefault: () => void; }) => {
     e.preventDefault();
 
     const data = {

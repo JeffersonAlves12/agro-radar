@@ -180,7 +180,7 @@ export default function Page() {
           ) : (
             <select
               value={selectedGatewayId}
-              onChange={(e) => setSelectedGatewayId(e.target.value)}
+              onChange={(e: { target: { value: any; }; }) => setSelectedGatewayId(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-400 text-gray-800"
               required
             >
@@ -204,7 +204,7 @@ export default function Page() {
           ) : (
             <select
               value={selectedSensorId}
-              onChange={(e) => setSelectedSensorId(e.target.value)}
+              onChange={(e) => setSelectedSensorId(Number.parseInt(e.target.value))}
               className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-400 text-gray-800"
             >
               <option value="">Selecione um sensor</option>
