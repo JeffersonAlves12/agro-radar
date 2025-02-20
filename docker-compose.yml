@@ -9,7 +9,23 @@ services:
       - "8080:8080"
     depends_on:
       postgres:
-        condition: service_healthy  # Dependência do PostgreSQL
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/agro_radar
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+      SPRING_MAIL_HOST: smtp.gmail.com
+      SPRING_MAIL_PORT: 587
+      SPRING_MAIL_USERNAME: jafelix495@gmail.com
+      SPRING_MAIL_PASSWORD: "dzxx ctdm lqpn jtkm"  # Senha de app do Gmail mantida
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "true"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "true"
 
   nextjs:
     build:
@@ -17,9 +33,13 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
+    depends_on:
+      - java
 
-  nginx:  # SERVIÇO NGINX MANTIDO
-    build: ./nginx
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
     ports:
       - "80:80"
     depends_on:
@@ -39,12 +59,27 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-      
-  mongo:
-     image: mongo:latest
-     environment:
-       MONGO_INITDB_ROOT_USERNAME: root
-       MONGO_INITDB_ROOT_PASSWORD: root
-       MONGO_INITDB_DATABASE: agro_radar
-     ports:
-       - "27017:27017"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    hostname: rabbitmq  # Define explicitamente o hostname
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_VHOST: "/"  # Virtual host padrão
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq  # Persistência dos dados do RabbitMQ
+
+volumes:
+  postgres_data:
+  rabbitmq_data:  # Volume para RabbitMQ

@@ -17,6 +17,7 @@ import com.agro.radar.dto.DispositivoDTO;
 import com.agro.radar.models.Dispositivo;
 import com.agro.radar.push.PushService;
 import com.agro.radar.services.DispositivoService;
+import com.agro.radar.services.MessageService;
 
 @RestController
 @RequestMapping("/api/dispositivos")
@@ -27,6 +28,9 @@ public class DispositivoController {
 
     @Autowired
     private PushService pushService;
+
+    @Autowired
+    private MessageService messageService;
 
     @GetMapping
     public List<DispositivoDTO> listar() {
@@ -53,6 +57,14 @@ public class DispositivoController {
     @PostMapping
     public DispositivoDTO criar(@RequestBody Dispositivo dispositivo) {
         Dispositivo novoDispositivo = dispositivoService.salvar(dispositivo);
+
+        // Enviar mensagem para enviar e-mail
+    messageService.sendEmailMessage(
+        "Novo Dispositivo Criado",
+        "jafelix495@gmail.com", // Substitua pelo e-mail do destinatário
+        String.format("O dispositivo %s foi criado com sucesso na localização %s.",
+                novoDispositivo.getNome(), novoDispositivo.getLocalizacao())
+    );
 
         // Push para criação de dispositivo
         pushService.enviarDispositivoCriadoEvento(
